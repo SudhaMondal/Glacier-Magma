@@ -6,13 +6,25 @@
   <meta name="theme-color" content="#05080d" />
   <title>Glacier &amp; Magma - Elemental Chess</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%99%9E%3C/text%3E%3C/svg%3E" />
-  <style>html,body{margin:0;min-height:100%;background:#05080d;color:#e8f1f8;font:15px/1.5 system-ui,sans-serif}#boot{padding:28px;max-width:640px}</style>
-  <script type="module" crossorigin src="./assets/index-IftrT7Nc.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-Kw6RC_L0.css">
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #05080d; color: #e8f1f8; font: 15px/1.5 system-ui, sans-serif; }
+    #boot { padding: 28px; max-width: 640px; }
+  </style>
+
+  <!-- FIX: The compiled JS and CSS files are in the repository root, not /assets/. -->
+  <script type="module" crossorigin src="./index-IftrT7Nc.js"></script>
+  <link rel="stylesheet" crossorigin href="./index-Kw6RC_L0.css" />
 </head>
 <body>
   <div id="stage"></div>
-  <div id="app"><p id="boot"><b>Loading Glacier &amp; Magma…</b><br />If this message never goes away, the game files failed to load. This usually means the site was published from the source code instead of the built version (see DEPLOY.md, “Blank white page”), or JavaScript is disabled.</p></div>
+  <div id="app">
+    <p id="boot">
+      <b>Loading Glacier &amp; Magma…</b><br />
+      If this message remains visible, check that index-IftrT7Nc.js and
+      index-Kw6RC_L0.css are present beside this index.html file, and that
+      JavaScript and WebGL are enabled in your browser.
+    </p>
+  </div>
   <noscript><p style="padding:28px">Glacier &amp; Magma needs JavaScript and WebGL.</p></noscript>
   <div id="toasts"></div>
   <script src="./config.js"></script>
