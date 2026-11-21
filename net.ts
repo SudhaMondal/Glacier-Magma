@@ -1,6 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 
-export const SERVER: string = String(import.meta.env.VITE_SERVER_URL || '').replace(/\/+$/, '');
+export const SERVER: string = String((window as any).GM_CONFIG?.serverUrl || import.meta.env.VITE_SERVER_URL || '').trim().replace(/\/+$/, '');
 let socket: Socket | null = null;
 
 export async function api<T = any>(path: string, body?: unknown): Promise<T> {

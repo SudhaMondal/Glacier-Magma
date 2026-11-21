@@ -1,5 +1,18 @@
 # Step-by-step deployment guide
 
+## FASTEST: put the playable game on GitHub Pages in 3 steps (no build tools)
+The folder `docs/` in this project is the **already-built website**. GitHub can serve it directly.
+1. Upload the `docs` folder (with its `assets` subfolder) to the root of your repo, next to `package.json`.
+2. Repo -> **Settings -> Pages -> Build and deployment -> Source: "Deploy from a branch"** -> Branch `main`, folder **`/docs`** -> Save.
+3. Wait 1-2 minutes, open `https://<you>.github.io/<repo>/` and click **"Play now"**. The computer opponent (Easy / Medium / Hard)
+   and pass-and-play work immediately - no server needed.
+
+**Online rooms, spectators and the leaderboard** need the game server (GitHub Pages cannot run it): deploy it with Step 3 below (Render),
+then edit `docs/config.js` on GitHub (pencil icon) and set `serverUrl` to your Render address, and set `CLIENT_ORIGIN=https://<you>.github.io`
+on Render. No rebuild required. (If you change the source code later, regenerate `docs/` with `npm run build:docs`.)
+
+---
+
 You will: (1) run the game locally, (2) put it on GitHub, (3) deploy it on the internet so players worldwide can use it.
 The whole app (website + live game server) is **one Node service**, so you only deploy one thing.
 

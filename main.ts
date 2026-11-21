@@ -10,6 +10,7 @@ const $app = document.getElementById('app')!, $stage = document.getElementById('
 const settings = { turbo: localStorage.getItem('gm_turbo') === '1', quality: localStorage.getItem('gm_quality') || 'high' };
 // `auth`, `view`, `session` and `hud` are null while idle; guarded at the call sites that can run before they exist.
 let auth: AuthState = null as any, view: GameView = null as any, session: Session = null as any, curKey: string | null = null, sel = -1;
+let offline = false;
 let targets: { sq: number; capture: boolean }[] = [] as { sq: number; capture: boolean }[], lobbyHandler: ((l: LobbyRoom[]) => void) | null = null, rooms: LobbyRoom[] = [];
 try { auth = JSON.parse(localStorage.getItem('gm_auth') || 'null'); } catch { /* ignore */ }
 
@@ -52,7 +53,8 @@ function startSocket() {
   const s = connect(auth.token);
   s.on('connect_error', (e) => { if (e.message === 'auth') { toast('Session expired - sign in again', 'err'); logout(); } });
 }
-function logout() { stopGame(); disconnect(); auth = null as any; localStorage.removeItem('gm_auth'); showAuth(); }
+function startOffline() { offline = true; auth = { token: '', user: { id: 'local', name: 'You', guest: true } }; audio.init(); showLobby(); }
+function logout() { offline = false; stopGame(); disconnect(); auth = null as any; localStorage.removeItem('gm_auth'); showAuth(); }
 
 function showAuth() {
   stopGame();
@@ -78,6 +80,8 @@ function showAuth() {
     mount(h('main', { class: 'center' }, h('section', { class: 'panel auth' },
       h('h1', { class: 'title' }, 'Glacier & Magma'),
       h('p', { class: 'tag' }, 'Chess where ice meets fire. Play anyone, anywhere.'),
+      h('button', { class: 'primary big', onclick: startOffline }, '▶ Play now — vs computer or on this device'),
+      h('p', { class: 'hint' }, 'No account or server needed. Sign in below for online rooms, watching, and the leaderboard.'),
       h('div', { class: 'tabs' }, ['login', 'register', 'guest'].map((t) => h('button', { class: t === tab ? 'on' : '', onclick: () => { tab = t; draw(); } }, { login: 'Sign in', register: 'Create account', guest: 'Play as guest' }[t]))),
       note, name, tab === 'guest' ? null : pass, err,
       h('button', { class: 'primary', onclick: go }, tab === 'login' ? 'Sign in' : tab === 'register' ? 'Create account' : 'Enter as guest'),
@@ -99,16 +103,17 @@ async function showLobby() {
       h('button', { class: r.joinable ? 'primary' : '', onclick: () => { location.hash = '#/r/' + r.id; } }, r.joinable ? 'Join game' : r.status === 'waiting' ? 'Watch (invite only)' : 'Watch'))) : [h('p', { class: 'empty' }, 'No public rooms yet. Create one and invite a friend, or play the AI.')]));
   };
   mount(h('main', { class: 'lobby' },
-    h('header', {}, h('h1', { class: 'title sm' }, 'Glacier & Magma'), h('div', { class: 'who' }, h('span', {}, auth.user.name + (auth.user.guest ? ' (guest)' : '')),
-      h('button', { onclick: openSettings }, 'Sound & display'), h('button', { onclick: logout }, 'Sign out'))),
+    h('header', {}, h('h1', { class: 'title sm' }, 'Glacier & Magma'), h('div', { class: 'who' }, h('span', {}, offline ? 'Playing offline' : auth.user.name + (auth.user.guest ? ' (guest)' : '')),
+      h('button', { onclick: openSettings }, 'Sound & display'), h('button', { onclick: logout }, offline ? 'Sign in for online play' : 'Sign out'))),
     h('div', { class: 'cols' },
       h('section', { class: 'panel' }, h('h2', {}, 'Play'),
-        h('button', { class: 'primary', onclick: openCreate }, 'Create a room'),
-        h('button', { onclick: openAI }, 'Play the computer'),
+        offline ? null : h('button', { class: 'primary', onclick: openCreate }, 'Create a room'),
+        h('button', { class: offline ? 'primary' : '', onclick: openAI }, 'Play the computer'),
         h('button', { onclick: () => startLocal({ mode: 'hotseat', name: auth.user.name }) }, 'Pass & play on one device'),
-        h('div', { class: 'join' }, linkIn, h('button', { onclick: () => { const v = linkIn.value.trim(), m = v.match(/#\/r\/([\w-]+(?:\/[\w-]+)?)/) || v.match(/^([\w-]+(?:\/[\w-]+)?)$/); if (m) location.hash = '#/r/' + m[1]; else toast('That does not look like a room link', 'err'); } }, 'Open link')),
-        h('h2', {}, 'Top players'), board),
-      h('section', { class: 'panel grow' }, h('h2', {}, 'Rooms'), list))));
+        offline ? null : h('div', { class: 'join' }, linkIn, h('button', { onclick: () => { const v = linkIn.value.trim(), m = v.match(/#\/r\/([\w-]+(?:\/[\w-]+)?)/) || v.match(/^([\w-]+(?:\/[\w-]+)?)$/); if (m) location.hash = '#/r/' + m[1]; else toast('That does not look like a room link', 'err'); } }, 'Open link')),
+        offline ? null : h('h2', {}, 'Top players'), offline ? null : board),
+      offline ? h('section', { class: 'panel grow' }, h('h2', {}, 'Online play'), h('p', { class: 'hint' }, 'Rooms, invites, spectators and the leaderboard need the game server. Click “Sign in for online play” once a server is connected (see DEPLOY.md).')) : h('section', { class: 'panel grow' }, h('h2', {}, 'Rooms'), list))));
+  if (offline) return;
   renderRooms();
   api('/api/leaderboard').then((l) => board.replaceChildren(...(l.length ? l.map((p) => h('li', {}, `${p.name} — ${p.wins}W ${p.losses}L ${p.draws}D`)) : [h('li', { class: 'empty' }, 'Sign in with an account to appear here.')]))).catch(() => {});
   try {
@@ -162,6 +167,7 @@ function openSettings() {
 // ---------------- routing ----------------
 function route() {
   if (!auth) return showAuth();
+  if (offline) return showLobby();
   const m = location.hash.match(/^#\/r\/([\w-]+)(?:\/([\w-]+))?/);
   if (m) enterOnline(m[1], m[2]); else showLobby();
 }
@@ -230,7 +236,7 @@ function refresh() {
     c.el.className = 'pcard ' + (color === 'w' ? 'ice' : 'magma') + (s.status === 'playing' && s.turn === color ? ' turn' : '');
   };
   const top = orient === 'w' ? 'b' : 'w'; fill(hud.top, top); fill(hud.bot, orient);
-  hud.status.textContent = s.status === 'waiting' ? 'Waiting for an opponent to join…' : s.status === 'finished' ? resultText(s) : `${nameOf(s, s.turn)}'s move${s.thinking ? ' (thinking…)' : ''}${s.check ? ' — check!' : ''}`;
+  hud.status.textContent = s.status === 'waiting' ? 'Waiting for an opponent to join…' : s.status === 'finished' ? resultText(s) : `${nameOf(s, s.turn) === 'You' ? 'Your' : nameOf(s, s.turn) + "'s"} move${s.thinking ? ' (thinking…)' : ''}${s.check ? ' — check!' : ''}`;
   hud.status.className = 'status' + (s.check && s.status === 'playing' ? ' check' : '');
   const rows: any[] = []; for (let i = 0; i < s.history.length; i += 2) rows.push(h('li', {}, h('span', {}, s.history[i].san), h('span', {}, s.history[i + 1]?.san || '')));
   hud.moves.replaceChildren(...rows); hud.moves.scrollTop = 1e6;

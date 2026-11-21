@@ -14,7 +14,8 @@
     "typecheck": "npm run typecheck -w shared -w server -w client",
     "build": "npm run build -w client",
     "start": "npm start -w server",
-    "test": "npm test -w shared && npm test -w server"
+    "test": "npm test -w shared && npm test -w server",
+    "build:docs": "npm run build -w client -- --base=./ --outDir=../docs --emptyOutDir"
   },
   "devDependencies": {
     "concurrently": "^9.0.1"
