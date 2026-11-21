@@ -1,0 +1,25 @@
+{
+  "name": "glacier-magma",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Glacier & Magma - animated 3D elemental chess with online multiplayer, spectators and AI",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "typecheck": "npm run typecheck -w shared -w server -w client",
+    "build": "npm run build -w client",
+    "start": "npm start -w server",
+    "test": "npm test -w shared && npm test -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

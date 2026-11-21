@@ -1,0 +1,19 @@
+# Render Blueprint: one Docker web service serves both the API/WebSocket server and the built client.
+services:
+  - type: web
+    name: glacier-magma
+    runtime: docker
+    plan: free            # free instances sleep when idle; use a paid plan for always-on play
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_DIR
+        value: /data
+    # Paid plans only - keeps accounts & leaderboard across deploys. Uncomment to enable:
+    # disk:
+    #   name: gm-data
+    #   mountPath: /data
+    #   sizeGB: 1
