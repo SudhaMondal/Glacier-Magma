@@ -136,3 +136,8 @@ Simplest alternative: skip GitHub Pages entirely and just open your Render URL -
 | Black screen / no 3D | Browser has WebGL disabled; try Chrome/Edge/Firefox/Safari recent versions. Choose graphics quality *Low*. |
 | No sound | Browsers block audio until you click once; click anywhere, then check Sound & display -> not muted. |
 | Slow animation on phones | Sound & display -> Graphics quality = Low, or enable Turbo. |
+
+
+## Reconstructed workspace package (November 2026)
+The supplied source archive had its `shared/`, `server/`, and `client/` directories flattened into the repository root. The upgraded package restores those directories and includes `.github/workflows/deploy-pages.yml`.
+For GitHub Pages, set **Settings -> Pages -> Source: GitHub Actions**. The workflow builds `client/dist` and publishes that build output. Do not publish the TypeScript source root directly.
