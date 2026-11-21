@@ -100,6 +100,21 @@ Only do this if you need it; the single-service setup is simpler.
 - Before launch: set a strong `JWT_SECRET`, keep it secret, back up `DATA_DIR`.
 
 ## Troubleshooting
+### Blank white page on `https://<you>.github.io/<repo>/`
+Cause: GitHub Pages is publishing the **source code** instead of the **built website**. (The source `index.html` points at
+`/src/main.ts`, which browsers cannot run, so you see nothing.) Confirm: right-click the page -> *View page source*; if you see
+`src="/src/main.ts"` this is the problem. A correct build shows `src="./assets/index-....js"`.
+
+Fix:
+1. Repo -> **Settings -> Pages -> Build and deployment -> Source = "GitHub Actions"** (NOT "Deploy from a branch").
+2. First deploy the game server (Step 3, Render) - GitHub Pages cannot run it - and copy its URL.
+3. Repo -> Settings -> Secrets and variables -> Actions -> **Variables** -> New: `GAME_SERVER_URL` = `https://your-app.onrender.com` (no trailing slash).
+4. On Render set the environment variable `CLIENT_ORIGIN` = `https://<you>.github.io` and redeploy.
+5. Repo -> **Actions** tab -> *Deploy client to GitHub Pages* -> **Run workflow**. Wait for the green tick, then reload (Ctrl+F5).
+
+Simplest alternative: skip GitHub Pages entirely and just open your Render URL - it serves the website and the game server together.
+
+### Other problems
 | Symptom | Fix |
 |---|---|
 | Page loads but "Not connected" / login fails | Server not reachable: check `/healthz`; if split hosting, check `VITE_SERVER_URL` and `CLIENT_ORIGIN` (exact origin, no trailing slash). |

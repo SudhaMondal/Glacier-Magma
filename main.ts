@@ -1,6 +1,6 @@
 import './style.css';
 import { fromFEN, legalMoves, colorOf, type Difficulty } from '@glacier-magma/shared';
-import { api, connect, disconnect, emit, getSocket } from './net.js';
+import { api, connect, disconnect, emit, getSocket, SERVER } from './net.js';
 import { OnlineSession, LocalSession } from './session.js';
 import type { AuthState, LobbyRoom, Session, Snapshot } from './types.js';
 import { audio } from './audio.js';
@@ -37,6 +37,15 @@ const TYPE_INFO: Record<string, string[]> = {
   closed: ['Closed', 'Hidden from the lobby. Players need the invite link, viewers need the watch link.'],
 };
 
+// Never fail silently: show any crash on screen.
+function fatal(msg: string) {
+  console.error(msg);
+  if (!$app.querySelector('main, .hud')) $app.replaceChildren(h('main', { class: 'center' }, h('section', { class: 'panel' }, h('h2', {}, 'Something went wrong'), h('p', { class: 'err' }, msg), h('p', { class: 'hint' }, 'Try reloading. If it persists, check the browser console (F12).'))));
+  else toast(msg, 'err');
+}
+addEventListener('error', (e) => fatal(e.message));
+addEventListener('unhandledrejection', (e) => fatal(String(e.reason?.message || e.reason)));
+
 // ---------------- auth ----------------
 function saveAuth(r: AuthState) { auth = r; localStorage.setItem('gm_auth', JSON.stringify(r)); startSocket(); route(); }
 function startSocket() {
@@ -49,6 +58,12 @@ function showAuth() {
   stopGame();
   let tab = 'login';
   const err = h('p', { class: 'err' });
+  const note = h('p', { class: 'note' });
+  fetch(SERVER + '/healthz', { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error('bad'); }).catch(() => {
+    note.textContent = location.hostname.endsWith('github.io') && !SERVER
+      ? 'This copy is hosted on GitHub Pages, which cannot run the live game server, so sign-in and online play will not work. Deploy the server (DEPLOY.md, Step 3), then rebuild this site with the GAME_SERVER_URL variable set. You can still try the computer opponent after the server is connected.'
+      : `Cannot reach the game server at ${SERVER || location.origin}. Check that it is running and that CLIENT_ORIGIN on the server matches this site's address.`;
+  });
   const draw = () => {
     const name = h('input', { placeholder: tab === 'guest' ? 'Pick a display name' : 'Username', maxlength: 20, autocomplete: 'username' });
     const pass = h('input', { type: 'password', placeholder: 'Password', autocomplete: tab === 'login' ? 'current-password' : 'new-password' });
@@ -64,7 +79,7 @@ function showAuth() {
       h('h1', { class: 'title' }, 'Glacier & Magma'),
       h('p', { class: 'tag' }, 'Chess where ice meets fire. Play anyone, anywhere.'),
       h('div', { class: 'tabs' }, ['login', 'register', 'guest'].map((t) => h('button', { class: t === tab ? 'on' : '', onclick: () => { tab = t; draw(); } }, { login: 'Sign in', register: 'Create account', guest: 'Play as guest' }[t]))),
-      name, tab === 'guest' ? null : pass, err,
+      note, name, tab === 'guest' ? null : pass, err,
       h('button', { class: 'primary', onclick: go }, tab === 'login' ? 'Sign in' : tab === 'register' ? 'Create account' : 'Enter as guest'),
       tab === 'guest' ? h('p', { class: 'hint' }, 'Guests can play and watch, but are not on the leaderboard.') : null)));
     name.focus();

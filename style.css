@@ -83,3 +83,5 @@ input:not([type]), input[type=password], select { width: 100%; background: rgba(
   .moves { min-height: 48px; max-height: 70px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.note:empty { display: none; } .note { margin: 0; padding: 10px 12px; border-radius: 8px; background: rgba(255, 120, 80, .14); font-size: 13px; }
